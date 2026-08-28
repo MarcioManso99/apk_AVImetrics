@@ -28,7 +28,7 @@ jobs:
       - name: Criar esqueleto de projeto Flutter caso falte
         run: |
           if [ ! -f "android/build.gradle" ] && [ ! -f "android/build.gradle.kts" ]; then
-            flutter create . --org com.jjagro.balanca
+            flutter create . --project-name balanca_avicola_pro --org com.jjagro.balanca
           fi
 
       - name: Baixar dependências
