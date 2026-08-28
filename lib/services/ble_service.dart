@@ -151,8 +151,7 @@ class BleService extends ChangeNotifier {
     if (_tareCharacteristic == null && _dataCharacteristic == null) return false;
     try {
       final target = _tareCharacteristic ?? _dataCharacteristic!;
-      await target.write(utf8.encode("CMD:TARE
-"), withoutResponse: false);
+      await target.write(utf8.encode("CMD:TARE\n"), withoutResponse: false);
       _statusMessage = "Comando de Tara enviado com sucesso.";
       notifyListeners();
       return true;
