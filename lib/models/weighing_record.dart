@@ -21,7 +21,6 @@ class WeighingRecord {
     this.isAutoRecorded = false,
   });
 
-  /// Converte para Map para salvar no SQLite
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -35,7 +34,6 @@ class WeighingRecord {
     };
   }
 
-  /// Constrói a partir de um registro do SQLite
   factory WeighingRecord.fromMap(Map<String, dynamic> map) {
     return WeighingRecord(
       id: map['id'] as int?,
@@ -49,8 +47,8 @@ class WeighingRecord {
     );
   }
 
-  /// Faz o parse seguro da string BLE recebida do ESP32:
-  /// Formato: "GALPAO:01;GAIOLA:03;PESO:2.45;DATA:12/01/2026;HORA:08:34"
+  /// Parse do pacote de telemetria BLE recebido do ESP32:
+  /// Formato: "GALPAO:01;GAIOLA:01;PESO:2.45;DATA:25/08/2026;HORA:07:42"
   factory WeighingRecord.fromBleString(String rawBleString, {
     String? defaultGalpao,
     String? defaultGaiola,

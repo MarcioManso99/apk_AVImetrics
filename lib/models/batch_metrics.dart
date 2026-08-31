@@ -9,7 +9,7 @@ class BatchMetrics {
   final double pesoMax;
   final double desvioPadrao;
   final double coeficienteVariacao; // CV%
-  final double uniformidadePercentual; // % de aves em ±10% da média
+  final double uniformidadePercentual; // % de aves dentro de ±10% da média
   final int avesNaFaixaIdeal;
   final int avesAbaixo;
   final int avesAcima;
@@ -50,7 +50,6 @@ class BatchMetrics {
     );
   }
 
-  /// Processa a lista de pesagens e calcula os parâmetros zootécnicos reais
   factory BatchMetrics.fromRecords(List<WeighingRecord> records) {
     if (records.isEmpty) return BatchMetrics.empty();
 
@@ -62,7 +61,6 @@ class BatchMetrics {
     final double minP = pesos.reduce(min);
     final double maxP = pesos.reduce(max);
 
-    // Desvio Padrão Amostral
     double variance = 0.0;
     if (total > 1) {
       double sumSquares = 0.0;
@@ -72,11 +70,8 @@ class BatchMetrics {
       variance = sumSquares / (total - 1);
     }
     final double dp = sqrt(variance);
-
-    // Coeficiente de Variação (CV%)
     final double cv = media > 0 ? (dp / media) * 100.0 : 0.0;
 
-    // Faixa de ±10% da média zootécnica
     final double limInf = media * 0.90;
     final double limSup = media * 1.10;
 

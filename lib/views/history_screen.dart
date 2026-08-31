@@ -11,88 +11,53 @@ class HistoryScreen extends StatelessWidget {
     final controller = context.watch<WeighingController>();
 
     return Scaffold(
+      backgroundColor: const Color(0xFF030712),
       appBar: AppBar(
-        title: const Text('Histórico de Pesagens'),
+        title: Text('Histórico - Galpão ${controller.selectedGalpao}'),
+        backgroundColor: const Color(0xFF0F172A),
         actions: [
           IconButton(
-            tooltip: 'Exportar Planilha Excel (.xlsx)',
-            icon: const Icon(Icons.share),
+            tooltip: 'Exportar para Excel (.xlsx)',
+            icon: const Icon(Icons.share, color: Color(0xFFEA580C)),
             onPressed: controller.records.isEmpty
                 ? null
-                : () async {
-                    try {
-                      await ExportService.exportAndShareExcel(
-                        records: controller.records,
-                        metrics: controller.metrics,
-                        galpao: controller.selectedGalpao,
-                      );
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Erro ao exportar: $e')),
-                        );
-                      }
-                    }
-                  },
+                : () => ExportService.exportAndShareExcel(
+                      records: controller.records,
+                      metrics: controller.metrics,
+                      galpao: controller.selectedGalpao,
+                    ),
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Barra de Filtro e Exportação
-          Container(
-            padding: const EdgeInsets.all(12),
-            color: Colors.grey.shade100,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Galpão ${controller.selectedGalpao} (${controller.records.length} registros)',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1B5E20),
-                    foregroundColor: Colors.white,
+      body: controller.records.isEmpty
+          ? const Center(child: Text('Nenhuma pesagem gravada.', style: TextStyle(color: Colors.white54)))
+          : ListView.builder(
+              padding: const EdgeInsets.all(12),
+              itemCount: controller.records.length,
+              itemBuilder: (context, index) {
+                final r = controller.records[index];
+                return Card(
+                  color: const Color(0xFF0F172A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: const BorderSide(color: Colors.white12),
                   ),
-                  icon: const Icon(Icons.file_download, size: 18),
-                  label: const Text('Gerar Excel'),
-                  onPressed: controller.records.isEmpty
-                      ? null
-                      : () => ExportService.exportAndShareExcel(
-                            records: controller.records,
-                            metrics: controller.metrics,
-                            galpao: controller.selectedGalpao,
-                          ),
-                ),
-              ],
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFFEA580C),
+                      foregroundColor: Colors.white,
+                      child: Text('#${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                    title: Text('${r.peso.toStringAsFixed(2)} kg', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18)),
+                    subtitle: Text('G${r.galpao} • Gaiola ${r.gaiola} • ${r.data} ${r.hora}', style: const TextStyle(color: Colors.white54)),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                      onPressed: () => controller.deleteRecord(r.id!),
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
-
-          // Lista de Registros
-          Expanded(
-            child: controller.records.isEmpty
-                ? const Center(child: Text('Nenhum registro encontrado.'))
-                : ListView.builder(
-                    itemCount: controller.records.length,
-                    itemBuilder: (context, index) {
-                      final r = controller.records[index];
-                      return ListTile(
-                        leading: CircleAvatar(
-                          child: Text('${index + 1}'),
-                        ),
-                        title: Text('${r.peso.toStringAsFixed(2)} kg', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('G${r.galpao} • Gaiola ${r.gaiola} • ${r.data} ${r.hora}'),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => controller.deleteRecord(r.id!),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
     );
   }
 }

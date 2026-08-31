@@ -16,10 +16,9 @@ class WeighingController extends ChangeNotifier {
   List<WeighingRecord> _records = [];
   BatchMetrics _metrics = BatchMetrics.empty();
 
-  // Algoritmo de Detecção de Estabilidade de Peso (Filtro de Amortecimento)
   double _lastStableWeight = 0.0;
   final List<double> _weightHistory = [];
-  bool _isWeightStable = false;
+  bool _isWeightStable = true; // Por padrão estável
   DateTime? _lastAutoRecordTime;
 
   List<WeighingRecord> get records => _records;
@@ -38,32 +37,27 @@ class WeighingController extends ChangeNotifier {
     bleService.addListener(_onBleDataReceived);
   }
 
-  /// Carrega pesagens do SQLite e recalcula métricas
   Future<void> loadRecords() async {
     _records = await dbService.getAllRecords(galpao: selectedGalpao);
     _metrics = BatchMetrics.fromRecords(_records);
     notifyListeners();
   }
 
-  /// Altera o galpão ativo
   void setGalpao(String galpao) {
     selectedGalpao = galpao;
     loadRecords();
   }
 
-  /// Altera a gaiola ativa
   void setGaiola(String gaiola) {
     selectedGaiola = gaiola;
     notifyListeners();
   }
 
-  /// Liga/Desliga gravação automática por estabilidade
   void toggleAutoRecord(bool value) {
     autoRecordEnabled = value;
     notifyListeners();
   }
 
-  /// Trata dados recebidos da balança e verifica estabilização
   void _onBleDataReceived() {
     final currentWeight = bleService.currentWeight;
     
@@ -72,21 +66,18 @@ class WeighingController extends ChangeNotifier {
       _weightHistory.removeAt(0);
     }
 
-    // Critério de Estabilidade: Variação máxima < 0.02 kg nos últimos 5 frames e peso > 0.30 kg (ave no gancho)
-    if (_weightHistory.length >= 5 && currentWeight >= 0.30) {
+    if (_weightHistory.length >= 4 && currentWeight >= 0.30) {
       double minW = _weightHistory.reduce((a, b) => a < b ? a : b);
       double maxW = _weightHistory.reduce((a, b) => a > b ? a : b);
 
       if ((maxW - minW) <= 0.03) {
         _isWeightStable = true;
 
-        // Auto-gravação se habilitada e após intervalo mínimo de 2 segundos entre aves
         if (autoRecordEnabled) {
           final now = DateTime.now();
           final canAutoRecord = _lastAutoRecordTime == null ||
               now.difference(_lastAutoRecordTime!).inSeconds >= 3;
 
-          // Deve ser um peso diferente do último registrado para evitar duplicidade
           if (canAutoRecord && (currentWeight - _lastStableWeight).abs() > 0.05) {
             _lastStableWeight = currentWeight;
             _lastAutoRecordTime = now;
@@ -97,18 +88,16 @@ class WeighingController extends ChangeNotifier {
         _isWeightStable = false;
       }
     } else {
-      _isWeightStable = false;
+      _isWeightStable = currentWeight < 0.30;
     }
 
     notifyListeners();
   }
 
-  /// Registra pesagem (manual ou automática)
   Future<void> recordCurrentWeight({bool isAuto = false}) async {
     final double weightToSave = bleService.currentWeight;
-    if (weightToSave <= 0.05) return; // Não salvar peso vazio
+    if (weightToSave <= 0.05) return;
 
-    // Tentar criar a partir da string raw se contiver os dados exatos do ESP32
     final record = WeighingRecord.fromBleString(
       bleService.latestRawData,
       defaultGalpao: selectedGalpao,
@@ -124,13 +113,11 @@ class WeighingController extends ChangeNotifier {
     await loadRecords();
   }
 
-  /// Deleta um registro específico
   Future<void> deleteRecord(int id) async {
     await dbService.deleteRecord(id);
     await loadRecords();
   }
 
-  /// Limpa todos os registros do galpão
   Future<void> clearAll() async {
     await dbService.clearRecords(galpao: selectedGalpao);
     await loadRecords();

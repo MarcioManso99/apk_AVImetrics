@@ -11,87 +11,73 @@ class MetricsScreen extends StatelessWidget {
     final m = controller.metrics;
 
     return Scaffold(
+      backgroundColor: const Color(0xFF030712),
       appBar: AppBar(
-        title: Text('Métricas - Galpão ${controller.selectedGalpao}'),
+        title: Text('Métricas Zootécnicas - Galpão ${controller.selectedGalpao}'),
+        backgroundColor: const Color(0xFF0F172A),
       ),
       body: m.totalAves == 0
           ? const Center(
               child: Text(
                 'Nenhuma pesagem realizada ainda neste galpão.',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
+                style: TextStyle(color: Colors.white54, fontSize: 16),
               ),
             )
-          : SingleChildScrollView(
+          : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+              child: Row(
                 children: [
-                  // Destaque da Uniformidade
-                  Card(
-                    elevation: 3,
-                    color: m.uniformidadePercentual >= 80 ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20.0),
+                  // Card Destaque de Uniformidade
+                  Expanded(
+                    flex: 4,
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: const Color(0xFFEA580C).withOpacity(0.4)),
+                      ),
                       child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text('UNIFORMIDADE DO LOTE (±10%)', style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 1)),
+                          const Text(
+                            'UNIFORMIDADE DO LOTE (±10%)',
+                            style: TextStyle(color: Colors.white70, fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
                           const SizedBox(height: 8),
                           Text(
                             '${m.uniformidadePercentual.toStringAsFixed(1)}%',
-                            style: TextStyle(
-                              fontSize: 48,
-                              fontWeight: FontWeight.bold,
-                              color: m.uniformidadePercentual >= 80 ? const Color(0xFF2E7D32) : const Color(0xFFE65100),
+                            style: const TextStyle(
+                              fontSize: 54,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFFEA580C),
                             ),
                           ),
                           Text(
-                            '${m.avesNaFaixaIdeal} de ${m.totalAves} aves na faixa de ${m.limiteInferior.toStringAsFixed(2)}kg a ${m.limiteSuperior.toStringAsFixed(2)}kg',
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(color: Colors.black87),
+                            '${m.avesNaFaixaIdeal} de ${m.totalAves} aves na faixa ideal',
+                            style: const TextStyle(color: Color(0xFF34D399), fontWeight: FontWeight.bold),
                           ),
                         ],
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(width: 16),
 
-                  // Grade de 4 Métricas Zootécnicas
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 1.3,
-                    children: [
-                      _buildMetricTile('Total de Aves', '${m.totalAves}', 'aves pesadas', Icons.pets, Colors.blue),
-                      _buildMetricTile('Peso Médio', '${m.pesoMedio.toStringAsFixed(3)} kg', 'média real', Icons.scale, Colors.green),
-                      _buildMetricTile('Peso Total', '${m.pesoTotal.toStringAsFixed(2)} kg', 'acumulado', Icons.fitness_center, Colors.teal),
-                      _buildMetricTile('Coef. Variação (CV)', '${m.coeficienteVariacao.toStringAsFixed(1)}%', m.coeficienteVariacao < 8 ? 'Excelente (<8%)' : 'Aceitável', Icons.trending_up, Colors.orange),
-                    ],
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Distribuição da População
-                  Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Distribuição Zootécnica das Aves', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                          const SizedBox(height: 12),
-                          _buildDistributionRow('Abaixo do Peso (< -10%)', m.avesAbaixo, m.totalAves, Colors.amber),
-                          const SizedBox(height: 8),
-                          _buildDistributionRow('Faixa Ideal (±10%)', m.avesNaFaixaIdeal, m.totalAves, Colors.green),
-                          const SizedBox(height: 8),
-                          _buildDistributionRow('Acima do Peso (> +10%)', m.avesAcima, m.totalAves, Colors.redAccent),
-                        ],
-                      ),
+                  // Grade de Métricas
+                  Expanded(
+                    flex: 6,
+                    child: GridView.count(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 2.2,
+                      children: [
+                        _buildTile('Total de Aves', '${m.totalAves} aves', Icons.pets, const Color(0xFFEA580C)),
+                        _buildTile('Peso Médio', '${m.pesoMedio.toStringAsFixed(3)} kg', Icons.scale, Colors.orangeAccent),
+                        _buildTile('Peso Total', '${m.pesoTotal.toStringAsFixed(2)} kg', Icons.fitness_center, Colors.amber),
+                        _buildTile('Coef. Variação (CV)', '${m.coeficienteVariacao.toStringAsFixed(1)}%', Icons.trending_up, const Color(0xFF10B981)),
+                      ],
                     ),
                   ),
                 ],
@@ -100,53 +86,28 @@ class MetricsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildMetricTile(String title, String value, String subtitle, IconData icon, Color color) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: color, size: 20),
-                const SizedBox(width: 6),
-                Expanded(child: Text(title, style: const TextStyle(fontSize: 12, color: Colors.black54, fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            Text(subtitle, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
-          ],
-        ),
+  Widget _buildTile(String title, String value, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0F172A),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
       ),
-    );
-  }
-
-  Widget _buildDistributionRow(String label, int count, int total, Color color) {
-    final double pct = total > 0 ? count / total : 0.0;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
-            Text('$count aves (${(pct * 100).toStringAsFixed(1)}%)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: color)),
-          ],
-        ),
-        const SizedBox(height: 4),
-        LinearProgressIndicator(
-          value: pct,
-          color: color,
-          backgroundColor: Colors.grey.shade200,
-          minHeight: 8,
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ],
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 24),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(title, style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.bold)),
+              Text(value, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }

@@ -10,7 +10,7 @@ class DatabaseService {
 
   Future<Database> get database async {
     if (_database != null) return _database!;
-    _database = await _initDB('balanca_avicola.db');
+    _database = await _initDB('jjagro_balanca.db');
     return _database!;
   }
 
@@ -42,18 +42,14 @@ class DatabaseService {
         isAutoRecorded INTEGER NOT NULL DEFAULT 0
       )
     ''');
-
-    // Índice para consultas rápidas por galpão e data
-    await db.execute('CREATE INDEX idx_galpao_data ON pesagens(galpao, data);');
+    await db.execute('CREATE INDEX idx_galpao ON pesagens(galpao);');
   }
 
-  /// Salva uma nova pesagem
   Future<int> insertRecord(WeighingRecord record) async {
     final db = await database;
     return await db.insert('pesagens', record.toMap());
   }
 
-  /// Retorna todas as pesagens (mais recentes primeiro)
   Future<List<WeighingRecord>> getAllRecords({String? galpao}) async {
     final db = await database;
     List<Map<String, dynamic>> maps;
@@ -75,13 +71,11 @@ class DatabaseService {
     return List.generate(maps.length, (i) => WeighingRecord.fromMap(maps[i]));
   }
 
-  /// Remove uma pesagem pelo ID
   Future<int> deleteRecord(int id) async {
     final db = await database;
     return await db.delete('pesagens', where: 'id = ?', whereArgs: [id]);
   }
 
-  /// Limpa histórico por galpão ou geral
   Future<int> clearRecords({String? galpao}) async {
     final db = await database;
     if (galpao != null && galpao != 'Todos') {

@@ -10,120 +10,61 @@ class BleScanScreen extends StatelessWidget {
     final ble = context.watch<BleService>();
 
     return Scaffold(
+      backgroundColor: const Color(0xFF030712),
       appBar: AppBar(
-        title: const Text('Conexão Bluetooth (ESP32)'),
+        title: const Text('Conectar Balança Bluetooth'),
+        backgroundColor: const Color(0xFF0F172A),
         actions: [
-          if (ble.isScanning)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => ble.startScan(),
+          ),
+        ],
+      ),
+      body: ble.scanResults.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.bluetooth_searching, size: 54, color: Color(0xFFEA580C)),
+                  const SizedBox(height: 12),
+                  const Text('Procurando balanças ESP32...', style: TextStyle(color: Colors.white70)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA580C)),
+                    onPressed: () => ble.startScan(),
+                    child: const Text('Escanear Novamente', style: TextStyle(color: Colors.white)),
+                  ),
+                ],
               ),
             )
-          else
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              tooltip: 'Escanear',
-              onPressed: () => ble.startScan(),
-            ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Status Card
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: ble.isConnected ? const Color(0xFFE8F5E9) : const Color(0xFFFFF3E0),
-            child: Row(
-              children: [
-                Icon(
-                  ble.isConnected ? Icons.check_circle : Icons.bluetooth_searching,
-                  color: ble.isConnected ? Colors.green : Colors.orange,
-                  size: 32,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        ble.isConnected
-                            ? 'Balança Conectada (${ble.connectedDevice?.platformName ?? 'ESP32'})'
-                            : 'Balança Desconectada',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      if (ble.statusMessage != null)
-                        Text(ble.statusMessage!, style: const TextStyle(fontSize: 12, color: Colors.black54)),
-                    ],
-                  ),
-                ),
-                if (ble.isConnected)
-                  TextButton(
-                    onPressed: () => ble.disconnect(),
-                    child: const Text('DESCONECTAR', style: TextStyle(color: Colors.red)),
-                  ),
-              ],
-            ),
-          ),
-
-          // Ações Rápidas de Tara quando conectado
-          if (ble.isConnected)
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: OutlinedButton.icon(
-                icon: const Icon(Icons.line_weight),
-                label: const Text('Zerar Balança / Tara Remota'),
-                onPressed: () => ble.sendTareCommand(),
-              ),
-            ),
-
-          const Divider(height: 1),
-
-          // Lista de Dispositivos Encontrados
-          Expanded(
-            child: ble.scanResults.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.bluetooth, size: 64, color: Colors.grey),
-                        const SizedBox(height: 16),
-                        const Text('Nenhuma balança encontrada.', style: TextStyle(color: Colors.grey, fontSize: 16)),
-                        const SizedBox(height: 12),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.search),
-                          label: const Text('Buscar Balanças ESP32'),
-                          onPressed: () => ble.startScan(),
-                        ),
-                      ],
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: ble.scanResults.length,
+              itemBuilder: (context, index) {
+                final res = ble.scanResults[index];
+                final name = res.device.platformName.isNotEmpty ? res.device.platformName : 'Balança ESP32 (${res.device.remoteId})';
+                return Card(
+                  color: const Color(0xFF0F172A),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    leading: const Icon(Icons.scale, color: Color(0xFFEA580C)),
+                    title: Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                    subtitle: Text('Sinal RSSI: ${res.rssi} dBm', style: const TextStyle(color: Colors.white54)),
+                    trailing: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFEA580C)),
+                      child: const Text('Conectar', style: TextStyle(color: Colors.white)),
+                      onPressed: () async {
+                        final ok = await ble.connectToDevice(res.device);
+                        if (ok && context.mounted) {
+                          Navigator.pop(context);
+                        }
+                      },
                     ),
-                  )
-                : ListView.builder(
-                    itemCount: ble.scanResults.length,
-                    itemBuilder: (context, index) {
-                      final result = ble.scanResults[index];
-                      final name = result.device.platformName.isNotEmpty
-                          ? result.device.platformName
-                          : 'Dispositivo BLE (${result.device.remoteId})';
-
-                      return ListTile(
-                        leading: const Icon(Icons.scale, color: Color(0xFF1B5E20)),
-                        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        subtitle: Text('RSSI: ${result.rssi} dBm | ID: ${result.device.remoteId}'),
-                        trailing: ElevatedButton(
-                          child: const Text('Conectar'),
-                          onPressed: () => ble.connectToDevice(result.device),
-                        ),
-                      );
-                    },
                   ),
-          ),
-        ],
-      ),
+                );
+              },
+            ),
     );
   }
 }
