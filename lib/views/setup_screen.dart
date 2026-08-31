@@ -156,7 +156,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
               ),
               const SizedBox(width: 20),
-              // Coluna da Direita: Card de Ação
+              // Coluna da Direita: Card de Ação + Botão de Tara
               Expanded(
                 flex: 4,
                 child: Container(
@@ -172,7 +172,7 @@ class _SetupScreenState extends State<SetupScreen> {
                       Column(
                         children: [
                           const Text("LOTE CONFIGURADO", style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -183,7 +183,7 @@ class _SetupScreenState extends State<SetupScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: const Color(0xFFEA580C)),
                                 ),
-                                child: Text("GALPÃO ${_selectedGalpao.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 16)),
+                                child: Text("GALPÃO ${_selectedGalpao.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 15)),
                               ),
                               const SizedBox(width: 8),
                               Container(
@@ -193,42 +193,86 @@ class _SetupScreenState extends State<SetupScreen> {
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: const Color(0xFFEA580C)),
                                 ),
-                                child: Text("GAIOLA ${_selectedGaiola.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 16)),
+                                child: Text("GAIOLA ${_selectedGaiola.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 15)),
                               ),
                             ],
                           ),
                         ],
                       ),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 55,
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFEA580C),
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            elevation: 4,
-                          ),
-                          onPressed: () {
-                            controller.setGalpao("Galpão ${_selectedGalpao.toString().padLeft(2, '0')}");
-                            controller.setGaiola("Lote ${_selectedGaiola.toString().padLeft(2, '0')}");
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const WeighingScreen()),
-                            );
-                          },
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.play_arrow_rounded, size: 28),
-                              SizedBox(width: 8),
-                              Text(
-                                "INICIAR PESAGEM",
-                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16, letterSpacing: 1),
+                      Column(
+                        children: [
+                          // BOTÃO ZERAR / TARA DO GANCHO
+                          SizedBox(
+                            width: double.infinity,
+                            height: 48,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: const Color(0xFF030712),
+                                side: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               ),
-                            ],
+                              onPressed: () {
+                                ble.sendTareCommand();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Comando de Tara enviado para a Balança!"),
+                                    duration: Duration(milliseconds: 900),
+                                    backgroundColor: Color(0xFFEA580C),
+                                  ),
+                                );
+                              },
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.sync_rounded, color: Color(0xFFF97316), size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "ZERAR / TARA DO GANCHO",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: 13,
+                                      color: Colors.white,
+                                      letterSpacing: 0.8,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(height: 10),
+                          // BOTÃO INICIAR PESAGEM
+                          SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFFEA580C),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                elevation: 4,
+                              ),
+                              onPressed: () {
+                                controller.setGalpao("Galpão ${_selectedGalpao.toString().padLeft(2, '0')}");
+                                controller.setGaiola("Lote ${_selectedGaiola.toString().padLeft(2, '0')}");
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const WeighingScreen()),
+                                );
+                              },
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.play_arrow_rounded, size: 26),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "INICIAR PESAGEM",
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 1),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
