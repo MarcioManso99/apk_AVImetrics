@@ -147,8 +147,7 @@ class BleService extends ChangeNotifier {
     }
     try {
       final target = _tareCharacteristic ?? _dataCharacteristic!;
-      await target.write(utf8.encode("CMD:TARE
-"), withoutResponse: false);
+      await target.write(utf8.encode("CMD:TARE\n"), withoutResponse: false);
       _currentWeight = 0.0;
       _statusMessage = "Gancho zerado com sucesso (Tara executada).";
       notifyListeners();
