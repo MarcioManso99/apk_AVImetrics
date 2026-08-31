@@ -11,7 +11,7 @@ import 'views/setup_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Trava a orientação em Paisagem (Landscape) e ativa modo imersivo
+  // Trava em modo Paisagem (Landscape) e ativa tela cheia imersiva
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
