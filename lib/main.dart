@@ -11,14 +11,14 @@ import 'views/setup_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Trava em modo Paisagem (Landscape) e ativa tela cheia imersiva
+  // Trava a orientacao em Paisagem (Landscape) e ativa tela cheia imersiva
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ]);
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  final dbService = DatabaseService();
+  final dbService = DatabaseService.instance;
 
   runApp(
     MultiProvider(
