@@ -1,4 +1,4 @@
-name: Gerar APK Balança Avícola
+name: Gerar APK AVImetrics
 
 on:
   push:
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Baixar código do repositório
+      - name: Baixar codigo do repositorio
         uses: actions/checkout@v4
 
       - name: Configurar Java 17
@@ -28,12 +28,13 @@ jobs:
       - name: Recriar esqueleto Android nativo
         run: |
           rm -rf android
-         flutter create . --project-name avimetrics --org com.jjagro.avimetrics --platforms=android
-         - name: Configurar pubspec.yaml com dependencias compativeis
+          flutter create . --project-name avimetrics --org com.jjagro.avimetrics --platforms=android
+
+      - name: Configurar pubspec.yaml com dependencias e icones
         run: |
           cat << 'EOF' > pubspec.yaml
           name: avimetrics
-          description: "AVImetrics - Sistema Inteligente de Pesagem Avícola"
+          description: "AVImetrics - Sistema Inteligente de Pesagem Avicola"
           publish_to: 'none'
           version: 1.0.5+6
 
@@ -58,33 +59,41 @@ jobs:
             flutter_test:
               sdk: flutter
             flutter_lints: ^4.0.0
+            flutter_launcher_icons: ^0.13.1
+
+          flutter_launcher_icons:
+            android: "launcher_icon"
+            ios: false
+            image_path: "assets/app_icon.png"
+            min_sdk_android: 21
 
           flutter:
             uses-material-design: true
+            assets:
+              - assets/
           EOF
 
-      - name: Configurar SDKs do Android e Permissoes
+      - name: Gerar Icones do App
         run: |
-          # Ajustar compileSdk e minSdk no build.gradle do app
+          flutter pub get
+          if [ -f "assets/app_icon.png" ]; then
+            dart run flutter_launcher_icons
+          fi
+
+      - name: Configurar Android SDKs, Orientacao e Permissoes
+        run: |
           APP_GRADLE="android/app/build.gradle"
           if [ -f "$APP_GRADLE" ]; then
             sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 34/g' $APP_GRADLE || true
             sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' $APP_GRADLE || true
             sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/g' $APP_GRADLE || true
-            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 34/g' $APP_GRADLE || true
-            sed -i 's/minSdkVersion flutter.minSdkVersion/minSdkVersion 21/g' $APP_GRADLE || true
-            sed -i 's/targetSdkVersion flutter.targetSdkVersion/targetSdkVersion 34/g' $APP_GRADLE || true
           fi
 
-          # Inserir permissoes BLE e Armazenamento no AndroidManifest
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           PERMISSOES='    <uses-permission android:name="android.permission.BLUETOOTH" />\n    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />\n    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <application'
           sed -i "s|<application|$PERMISSOES|g" $MANIFEST
-          # Definir o nome visível do app no Android
+          sed -i 's/android:name=".MainActivity"/android:name=".MainActivity"\n            android:screenOrientation="landscape"/g' $MANIFEST
           sed -i 's/android:label="[^"]*"/android:label="AVImetrics"/g' $MANIFEST
-
-      - name: Baixar dependencias
-        run: flutter pub get
 
       - name: Compilar APK (Release)
         run: flutter build apk --release
@@ -92,5 +101,5 @@ jobs:
       - name: Disponibilizar APK para download
         uses: actions/upload-artifact@v4
         with:
-          name: Balanca-Avicola-Pro-Release
+          name: AVImetrics-Release
           path: build/app/outputs/flutter-apk/app-release.apk
