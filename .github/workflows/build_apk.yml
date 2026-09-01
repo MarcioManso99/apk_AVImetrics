@@ -28,15 +28,14 @@ jobs:
       - name: Recriar esqueleto Android nativo
         run: |
           rm -rf android
-          flutter create . --project-name balanca_avicola_pro --org com.jjagro.balanca --platforms=android
-
-      - name: Configurar pubspec.yaml com dependencias compativeis
+         flutter create . --project-name avimetrics --org com.jjagro.avimetrics --platforms=android
+         - name: Configurar pubspec.yaml com dependencias compativeis
         run: |
           cat << 'EOF' > pubspec.yaml
-          name: balanca_avicola_pro
-          description: "Aplicativo movel inteligente para pesagem avicola industrial com BLE e ESP32"
+          name: avimetrics
+          description: "AVImetrics - Sistema Inteligente de Pesagem Avícola"
           publish_to: 'none'
-          version: 1.0.0+2
+          version: 1.0.5+6
 
           environment:
             sdk: '>=3.0.0 <4.0.0'
@@ -81,6 +80,8 @@ jobs:
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           PERMISSOES='    <uses-permission android:name="android.permission.BLUETOOTH" />\n    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />\n    <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />\n    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />\n    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />\n    <application'
           sed -i "s|<application|$PERMISSOES|g" $MANIFEST
+          # Definir o nome visível do app no Android
+          sed -i 's/android:label="[^"]*"/android:label="AVImetrics"/g' $MANIFEST
 
       - name: Baixar dependencias
         run: flutter pub get
