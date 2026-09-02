@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/ble_service.dart';
+import '../services/database_service.dart';
+import '../services/sync_service.dart';
 import '../controllers/weighing_controller.dart';
 import 'weighing_screen.dart';
 
@@ -14,6 +16,89 @@ class SetupScreen extends StatefulWidget {
 class _SetupScreenState extends State<SetupScreen> {
   int _selectedGalpao = 1;
   int _selectedGaiola = 1;
+
+  void _abrirModalSincronizacao(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Row(
+                children: [
+                  Icon(Icons.cloud_sync_rounded, color: Color(0xFFEA580C), size: 26),
+                  SizedBox(width: 10),
+                  Text(
+                    "SINCRONIZAR / EXPORTAR DADOS",
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.table_chart_rounded, color: Color(0xFF10B981)),
+                ),
+                title: const Text("Exportar CSV (WhatsApp / Baixar)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: const Text("Gera arquivo formatado para importar na Central Web", style: TextStyle(color: Colors.white54, fontSize: 11)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final sync = SyncService(dbService: DatabaseService.instance);
+                  await sync.exportAndShareCsv(context);
+                },
+              ),
+              const Divider(color: Colors.white12),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEA580C).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.send_rounded, color: Color(0xFFEA580C)),
+                ),
+                title: const Text("Enviar Direto para a Central (Nuvem)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: const Text("Transfere as pesagens via internet se houver sinal", style: TextStyle(color: Colors.white54, fontSize: 11)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  final sync = SyncService(dbService: DatabaseService.instance);
+                  final ok = await sync.sendDirectToCentral(
+                    endpointUrl: "https://api.jjagro.com.br/v1/pesagens",
+                    apiKey: "SUA_API_KEY_AQUI",
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok ? "Lote sincronizado com sucesso!" : "Sem resposta da Central. Tente exportar em CSV."),
+                        backgroundColor: ok ? const Color(0xFF10B981) : Colors.redAccent,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,10 +124,10 @@ class _SetupScreenState extends State<SetupScreen> {
                         const Text(
                           "SETUP DO LOTE DE PESAGEM",
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: 1.1,
-                            color: Color(0xFFF97316),
+                            letterSpacing: 1.0,
+                            color: Color(0xFFEA580C),
                           ),
                         ),
                         Row(
@@ -93,7 +178,7 @@ class _SetupScreenState extends State<SetupScreen> {
                                 color: isSelected ? const Color(0xFFEA580C) : const Color(0xFF0F172A),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFFF97316) : Colors.white12,
+                                  color: isSelected ? const Color(0xFFEA580C) : Colors.white12,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -135,7 +220,7 @@ class _SetupScreenState extends State<SetupScreen> {
                                 color: isSelected ? const Color(0xFFEA580C) : const Color(0xFF0F172A),
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
-                                  color: isSelected ? const Color(0xFFF97316) : Colors.white12,
+                                  color: isSelected ? const Color(0xFFEA580C) : Colors.white12,
                                   width: isSelected ? 2 : 1,
                                 ),
                               ),
@@ -156,7 +241,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
               ),
               const SizedBox(width: 20),
-              // Coluna da Direita: Card de Ação + Botão de Tara
+              // Coluna da Direita: Card de Resumo + Botão de Tara + Sincronização + Iniciar
               Expanded(
                 flex: 4,
                 child: Container(
@@ -171,29 +256,29 @@ class _SetupScreenState extends State<SetupScreen> {
                     children: [
                       Column(
                         children: [
-                          const Text("LOTE CONFIGURADO", style: TextStyle(color: Colors.white54, fontSize: 12, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 10),
+                          const Text("LOTE CONFIGURADO", style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF030712),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: const Color(0xFFEA580C)),
                                 ),
-                                child: Text("GALPÃO ${_selectedGalpao.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 15)),
+                                child: Text("GALPÃO ${_selectedGalpao.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 14)),
                               ),
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF030712),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: const Color(0xFFEA580C)),
                                 ),
-                                child: Text("GAIOLA ${_selectedGaiola.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 15)),
+                                child: Text("GAIOLA ${_selectedGaiola.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 14)),
                               ),
                             ],
                           ),
@@ -201,22 +286,22 @@ class _SetupScreenState extends State<SetupScreen> {
                       ),
                       Column(
                         children: [
-                          // BOTÃO ZERAR / TARA DO GANCHO
+                          // BOTÃO TARA
                           SizedBox(
                             width: double.infinity,
-                            height: 48,
+                            height: 42,
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: const Color(0xFF030712),
                                 side: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               ),
                               onPressed: () {
                                 ble.sendTareCommand();
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text("Comando de Tara enviado para a Balança!"),
-                                    duration: Duration(milliseconds: 900),
+                                    content: Text("Comando de Tara enviado!"),
+                                    duration: Duration(milliseconds: 700),
                                     backgroundColor: Color(0xFFEA580C),
                                   ),
                                 );
@@ -224,32 +309,54 @@ class _SetupScreenState extends State<SetupScreen> {
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.sync_rounded, color: Color(0xFFF97316), size: 20),
-                                  SizedBox(width: 8),
+                                  Icon(Icons.sync_rounded, color: Color(0xFFEA580C), size: 18),
+                                  SizedBox(width: 6),
                                   Text(
                                     "ZERAR / TARA DO GANCHO",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 13,
-                                      color: Colors.white,
-                                      letterSpacing: 0.8,
-                                    ),
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 8),
+
+                          // BOTÃO SINCRONIZAR / EXPORTAR
+                          SizedBox(
+                            width: double.infinity,
+                            height: 42,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: const Color(0xFF030712),
+                                side: const BorderSide(color: Color(0xFF10B981), width: 1.2),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () => _abrirModalSincronizacao(context),
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.cloud_sync_rounded, color: Color(0xFF10B981), size: 18),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "SINCRONIZAR / EXPORTAR",
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF10B981)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
                           // BOTÃO INICIAR PESAGEM
                           SizedBox(
                             width: double.infinity,
-                            height: 52,
+                            height: 48,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFEA580C),
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                elevation: 4,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                elevation: 3,
                               ),
                               onPressed: () {
                                 controller.setGalpao("Galpão ${_selectedGalpao.toString().padLeft(2, '0')}");
@@ -262,11 +369,11 @@ class _SetupScreenState extends State<SetupScreen> {
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.play_arrow_rounded, size: 26),
-                                  SizedBox(width: 6),
+                                  Icon(Icons.play_arrow_rounded, size: 24),
+                                  SizedBox(width: 4),
                                   Text(
                                     "INICIAR PESAGEM",
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 1),
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.8),
                                   ),
                                 ],
                               ),
