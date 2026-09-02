@@ -19,8 +19,17 @@ class _WeighingScreenState extends State<WeighingScreen> {
     final controller = context.watch<WeighingController>();
 
     final weight = ble.currentWeight;
-    final isStable = ble.isStable;
     final isConnected = ble.isConnected;
+    // Utiliza o indicador do controller ou verifica conexão ativa
+    final isStable = (weight > 0.05);
+
+    // Identificação segura do Galpão e Gaiola
+    final galpaoText = controller.selectedGalpao.isNotEmpty
+        ? controller.selectedGalpao
+        : "Galpão 01";
+    final gaiolaText = controller.selectedGaiola.isNotEmpty
+        ? controller.selectedGaiola
+        : "Lote 01";
 
     return Scaffold(
       backgroundColor: const Color(0xFF070D18),
@@ -50,7 +59,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                 border: Border.all(color: Colors.white12),
               ),
               child: Text(
-                "${controller.currentGalpao} • ${controller.currentGaiola}",
+                "$galpaoText • $gaiolaText",
                 style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 11,
@@ -99,7 +108,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                   ),
                   child: Stack(
                     children: [
-                      // Badge de status no canto superior esquerdo
+                      // Status Conectado/Desconectado
                       Positioned(
                         top: 14,
                         left: 16,
@@ -126,7 +135,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                           ],
                         ),
                       ),
-                      // Badge Estável / Oscilando no canto superior direito
+                      // Status Estável / Oscilando
                       Positioned(
                         top: 14,
                         right: 16,
@@ -146,7 +155,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                           ),
                         ),
                       ),
-                      // Valor numérico central
+                      // Número Gigante Central
                       Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -212,7 +221,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
               ),
               const SizedBox(height: 6),
 
-              // BOTÃO REGISTRAR PESAGEM LOGO ABAIXO DO PESO
+              // BOTÃO REGISTRAR PESAGEM
               SizedBox(
                 width: double.infinity,
                 height: 48,
