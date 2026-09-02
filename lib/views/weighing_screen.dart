@@ -20,10 +20,8 @@ class _WeighingScreenState extends State<WeighingScreen> {
 
     final weight = ble.currentWeight;
     final isConnected = ble.isConnected;
-    // Utiliza o indicador do controller ou verifica conexão ativa
     final isStable = (weight > 0.05);
 
-    // Identificação segura do Galpão e Gaiola
     final galpaoText = controller.selectedGalpao.isNotEmpty
         ? controller.selectedGalpao
         : "Galpão 01";
@@ -71,7 +69,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.sync_rounded, color: Color(0xFFF97316)),
+            icon: const Icon(Icons.sync_rounded, color: Color(0xFFEA580C)),
             tooltip: "Zerar / Tara",
             onPressed: () {
               ble.sendTareCommand();
@@ -92,7 +90,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: Column(
             children: [
-              // MOSTRADOR DO PESO OCUPANDO A TELA
+              // MOSTRADOR DO PESO
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -101,7 +99,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: isConnected
-                          ? (isStable ? const Color(0xFF10B981) : const Color(0xFF38BDF8).withOpacity(0.5))
+                          ? (isStable ? const Color(0xFF10B981) : const Color(0xFFEA580C).withOpacity(0.5))
                           : Colors.white10,
                       width: 1.5,
                     ),
@@ -155,7 +153,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                           ),
                         ),
                       ),
-                      // Número Gigante Central
+                      // PESO GIGANTE EM LARANJA (Color(0xFFEA580C))
                       Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -165,7 +163,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                               style: const TextStyle(
                                 fontSize: 96,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFF38BDF8),
+                                color: Color(0xFFEA580C), // Laranja igual ao botão
                                 letterSpacing: -2,
                                 height: 1.0,
                               ),
@@ -221,7 +219,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
               ),
               const SizedBox(height: 6),
 
-              // BOTÃO REGISTRAR PESAGEM
+              // BOTÃO REGISTRAR PESAGEM (LARANJA 0xFFEA580C)
               SizedBox(
                 width: double.infinity,
                 height: 48,
