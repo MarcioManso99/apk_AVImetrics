@@ -37,14 +37,64 @@ class DatabaseService {
     ''');
   }
 
-  Future<int> insertWeighing(Map<String, dynamic> row) async {
+  // --- Métodos esperados pelo WeighingController ---
+
+  Future<List<dynamic>> getAllRecords({String? galpao}) async {
     final db = await database;
-    return await db.insert('weighings', row);
+    if (galpao != null && galpao.isNotEmpty) {
+      return await db.query(
+        'weighings',
+        where: 'galpao = ?',
+        whereArgs: [galpao],
+        orderBy: 'id DESC',
+      );
+    }
+    return await db.query('weighings', orderBy: 'id DESC');
   }
+
+  Future<int> insertRecord(dynamic record) async {
+    final db = await database;
+    if (record is Map<String, dynamic>) {
+      return await db.insert('weighings', record);
+    }
+    try {
+      return await db.insert('weighings', record.toMap());
+    } catch (_) {
+      return 0;
+    }
+  }
+
+  Future<int> deleteRecord(dynamic id) async {
+    final db = await database;
+    return await db.delete(
+      'weighings',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> clearRecords({String? galpao}) async {
+    final db = await database;
+    if (galpao != null && galpao.isNotEmpty) {
+      return await db.delete(
+        'weighings',
+        where: 'galpao = ?',
+        whereArgs: [galpao],
+      );
+    }
+    return await db.delete('weighings');
+  }
+
+  // --- Métodos esperados pelo SyncService ---
 
   Future<List<Map<String, dynamic>>> getAllWeighings() async {
     final db = await database;
     return await db.query('weighings', orderBy: 'id DESC');
+  }
+
+  Future<int> insertWeighing(Map<String, dynamic> row) async {
+    final db = await database;
+    return await db.insert('weighings', row);
   }
 
   Future<int> clearAllWeighings() async {
