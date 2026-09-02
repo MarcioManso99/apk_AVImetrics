@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../models/weighing_record.dart';
 
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
@@ -39,17 +40,22 @@ class DatabaseService {
 
   // --- Métodos esperados pelo WeighingController ---
 
-  Future<List<dynamic>> getAllRecords({String? galpao}) async {
+  Future<List<WeighingRecord>> getAllRecords({String? galpao}) async {
     final db = await database;
+    final List<Map<String, dynamic>> maps;
+
     if (galpao != null && galpao.isNotEmpty) {
-      return await db.query(
+      maps = await db.query(
         'weighings',
         where: 'galpao = ?',
         whereArgs: [galpao],
         orderBy: 'id DESC',
       );
+    } else {
+      maps = await db.query('weighings', orderBy: 'id DESC');
     }
-    return await db.query('weighings', orderBy: 'id DESC');
+
+    return List.generate(maps.length, (i) => WeighingRecord.fromMap(maps[i]));
   }
 
   Future<int> insertRecord(dynamic record) async {
