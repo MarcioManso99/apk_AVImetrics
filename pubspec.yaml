@@ -10,8 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Comunicação Bluetooth Serial Clássico com ESP32
-  flutter_bluetooth_serial: ^0.4.0
+  # Biblioteca Bluetooth Serial Clássico mantida para Flutter moderno
+  flutter_bluetooth_serial_plus: ^0.4.1
 
   # Banco de Dados Local Offline (SQLite)
   sqflite: ^2.3.3+1
@@ -36,11 +36,3 @@ dependencies:
   # Tipografia Moderna
   google_fonts: ^6.2.1
   cupertino_icons: ^1.0.8
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-  flutter_lints: ^4.0.0
-
-flutter:
-  uses-material-design: true
