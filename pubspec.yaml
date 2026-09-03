@@ -10,8 +10,8 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Bluetooth Low Energy (BLE) para comunicação contínua com ESP32
-  flutter_blue_plus: ^1.34.5
+  # Comunicação Bluetooth Serial Clássico com ESP32
+  flutter_bluetooth_serial: ^0.4.0
 
   # Banco de Dados Local Offline (SQLite)
   sqflite: ^2.3.3+1
