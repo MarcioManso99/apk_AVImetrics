@@ -18,6 +18,37 @@ class _SetupScreenState extends State<SetupScreen> {
   int _selectedGalpao = 1;
   int _selectedGaiola = 1;
 
+  Future<void> _dispararEnvioNuvem(BuildContext context) async {
+    final sync = SyncService(dbService: DatabaseService.instance);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Enviando dados para a Central..."),
+        duration: Duration(seconds: 1),
+        backgroundColor: Color(0xFF0F172A),
+      ),
+    );
+
+    final ok = await sync.sendDirectToCentral(
+      endpointUrl: "https://ais-dev-kvlyq6zsd6wwhkv6nqacj4-373503873765.us-west1.run.app/api/v1/pesagens",
+      apiKey: "avimetrics_secret_key_2026",
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            ok
+                ? "✓ Pesagens gravadas e consolidadas na Central AVImetrics!"
+                : "Sem resposta da Central. Verifique a internet ou exporte em CSV.",
+          ),
+          backgroundColor: ok ? const Color(0xFF10B981) : Colors.redAccent,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
   void _abrirModalBluetooth(BuildContext context) {
     final ble = context.read<BleService>();
     ble.loadPairedDevices();
@@ -25,6 +56,7 @@ class _SetupScreenState extends State<SetupScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0F172A),
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
@@ -34,7 +66,7 @@ class _SetupScreenState extends State<SetupScreen> {
 
           return SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              padding: const EdgeInsets.all(20),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,19 +176,20 @@ class _SetupScreenState extends State<SetupScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFF0F172A),
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Row(
                 children: [
-                  Icon(Icons.cloud_sync_rounded, color: Color(0xFFEA580C), size: 26),
+                  Icon(Icons.cloud_sync_rounded, color: Color(0xFFEA580C), size: 24),
                   SizedBox(width: 10),
                   Text(
                     "SINCRONIZAR / EXPORTAR DADOS",
@@ -169,7 +202,7 @@ class _SetupScreenState extends State<SetupScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
@@ -219,36 +252,9 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
                 title: const Text("Enviar Direto para a Central (Nuvem)", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                 subtitle: const Text("Transfere as pesagens via internet se houver sinal", style: TextStyle(color: Colors.white54, fontSize: 11)),
-                onTap: () async {
+                onTap: () {
                   Navigator.pop(ctx);
-                  final sync = SyncService(dbService: DatabaseService.instance);
-
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Enviando dados para a Central..."),
-                      duration: Duration(seconds: 1),
-                      backgroundColor: Color(0xFF0F172A),
-                    ),
-                  );
-
-                  final ok = await sync.sendDirectToCentral(
-                    endpointUrl: "https://ais-dev-kvlyq6zsd6wwhkv6nqacj4-373503873765.us-west1.run.app/api/v1/pesagens",
-                    apiKey: "avimetrics_secret_key_2026",
-                  );
-
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          ok
-                              ? "✓ Pesagens gravadas e consolidadas na Central AVImetrics!"
-                              : "Sem resposta da Central. Verifique a internet ou exporte em CSV.",
-                        ),
-                        backgroundColor: ok ? const Color(0xFF10B981) : Colors.redAccent,
-                        duration: const Duration(seconds: 3),
-                      ),
-                    );
-                  }
+                  _dispararEnvioNuvem(context);
                 },
               ),
             ],
@@ -422,7 +428,7 @@ class _SetupScreenState extends State<SetupScreen> {
               Expanded(
                 flex: 4,
                 child: Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
                     color: const Color(0xFF0F172A),
                     borderRadius: BorderRadius.circular(16),
@@ -434,28 +440,28 @@ class _SetupScreenState extends State<SetupScreen> {
                       Column(
                         children: [
                           const Text("LOTE CONFIGURADO", style: TextStyle(color: Colors.white54, fontSize: 11, letterSpacing: 1.2, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF030712),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: const Color(0xFFEA580C)),
                                 ),
-                                child: Text("GALPÃO ${_selectedGalpao.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 14)),
+                                child: Text("GALPÃO ${_selectedGalpao.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 13)),
                               ),
                               const SizedBox(width: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF030712),
                                   borderRadius: BorderRadius.circular(8),
                                   border: Border.all(color: const Color(0xFFEA580C)),
                                 ),
-                                child: Text("GAIOLA ${_selectedGaiola.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 14)),
+                                child: Text("GAIOLA ${_selectedGaiola.toString().padLeft(2, '0')}", style: const TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 13)),
                               ),
                             ],
                           ),
@@ -463,14 +469,59 @@ class _SetupScreenState extends State<SetupScreen> {
                       ),
                       Column(
                         children: [
+                          // BOTAO ENVIAR DIRETO PRA NUVEM (ROXO / CLOUD)
                           SizedBox(
                             width: double.infinity,
-                            height: 38,
-                            child: OutlinedButton(
+                            height: 36,
+                            child: ElevatedButton.icon(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF6366F1),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () => _dispararEnvioNuvem(context),
+                              icon: const Icon(Icons.cloud_upload_rounded, size: 16, color: Colors.white),
+                              label: const Text(
+                                "ENVIAR PARA CENTRAL (NUVEM)",
+                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, color: Colors.white),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+
+                          // BOTAO HISTÓRICO
+                          SizedBox(
+                            width: double.infinity,
+                            height: 36,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: const Color(0xFF030712),
+                                side: const BorderSide(color: Color(0xFF38BDF8), width: 1.2),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                                );
+                              },
+                              icon: const Icon(Icons.list_alt_rounded, size: 16, color: Color(0xFF38BDF8)),
+                              label: const Text(
+                                "HISTÓRICO / APAGAR",
+                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, color: Color(0xFF38BDF8)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+
+                          // BOTAO TARA
+                          SizedBox(
+                            width: double.infinity,
+                            height: 36,
+                            child: OutlinedButton.icon(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: const Color(0xFF030712),
                                 side: const BorderSide(color: Color(0xFF1E293B), width: 1.5),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                               ),
                               onPressed: () {
                                 ble.sendTareCommand();
@@ -482,83 +533,24 @@ class _SetupScreenState extends State<SetupScreen> {
                                   ),
                                 );
                               },
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.sync_rounded, color: Color(0xFFEA580C), size: 16),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    "ZERAR / TARA DO GANCHO",
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.white),
-                                  ),
-                                ],
+                              icon: const Icon(Icons.sync_rounded, size: 16, color: Color(0xFFEA580C)),
+                              label: const Text(
+                                "ZERAR / TARA GANCHO",
+                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 10, color: Colors.white),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 6),
+                          const SizedBox(height: 4),
+
+                          // BOTAO INICIAR PESAGEM
                           SizedBox(
                             width: double.infinity,
-                            height: 38,
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: const Color(0xFF030712),
-                                side: const BorderSide(color: Color(0xFF38BDF8), width: 1.2),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const HistoryScreen(),
-                                  ),
-                                );
-                              },
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.list_alt_rounded, color: Color(0xFF38BDF8), size: 16),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    "HISTÓRICO / APAGAR PESAGEM",
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF38BDF8)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 38,
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                backgroundColor: const Color(0xFF030712),
-                                side: const BorderSide(color: Color(0xFF10B981), width: 1.2),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                              ),
-                              onPressed: () => _abrirModalSincronizacao(context),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.cloud_sync_rounded, color: Color(0xFF10B981), size: 16),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    "SINCRONIZAR / EXPORTAR",
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF10B981)),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          SizedBox(
-                            width: double.infinity,
-                            height: 44,
-                            child: ElevatedButton(
+                            height: 40,
+                            child: ElevatedButton.icon(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFEA580C),
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                                 elevation: 3,
                               ),
                               onPressed: () {
@@ -569,16 +561,10 @@ class _SetupScreenState extends State<SetupScreen> {
                                   MaterialPageRoute(builder: (_) => const WeighingScreen()),
                                 );
                               },
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.play_arrow_rounded, size: 22),
-                                  SizedBox(width: 4),
-                                  Text(
-                                    "INICIAR PESAGEM",
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.8),
-                                  ),
-                                ],
+                              icon: const Icon(Icons.play_arrow_rounded, size: 20),
+                              label: const Text(
+                                "INICIAR PESAGEM",
+                                style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 0.8),
                               ),
                             ),
                           ),
