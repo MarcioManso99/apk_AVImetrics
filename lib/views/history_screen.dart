@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../services/database_service.dart';
-import '../models/weighing_record.dart';
 
 class HistoryScreen extends StatefulWidget {
   final String? galpaoFiltro;
@@ -13,7 +12,7 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  List<WeighingRecord> _registros = [];
+  List<Map<String, dynamic>> _registros = [];
   bool _isLoading = true;
 
   @override
@@ -24,18 +23,27 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   Future<void> _carregarRegistros() async {
     setState(() => _isLoading = true);
-    final dados = await DatabaseService.instance.getAllRecords(
-      galpao: widget.galpaoFiltro,
-    );
+    final db = await DatabaseService.instance.database;
+    final List<Map<String, dynamic>> dados;
+
+    if (widget.galpaoFiltro != null && widget.galpaoFiltro!.isNotEmpty) {
+      dados = await db.query(
+        'weighings',
+        where: 'galpao = ?',
+        whereArgs: [widget.galpaoFiltro],
+        orderBy: 'id DESC',
+      );
+    } else {
+      dados = await db.query('weighings', orderBy: 'id DESC');
+    }
+
     setState(() {
       _registros = dados;
       _isLoading = false;
     });
   }
 
-  Future<void> _confirmarExclusao(int? id, double peso) async {
-    if (id == null) return;
-
+  Future<void> _confirmarExclusao(int id, double peso) async {
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -52,7 +60,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           ],
         ),
         content: Text(
-          "Tem certeza que deseja apagar a pesagem de ${peso.toStringAsFixed(3)} kg?\nEsta ação não poderá ser desfeita.",
+          "Deseja apagar a pesagem de ${peso.toStringAsFixed(3)} kg?\nEsta ação não poderá ser desfeita.",
           style: const TextStyle(color: Colors.white70, fontSize: 13),
         ),
         actions: [
@@ -87,11 +95,30 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
   }
 
+  String _formatarDataHora(dynamic ts) {
+    if (ts == null) return '-';
+    try {
+      if (ts is int) {
+        final dt = DateTime.fromMillisecondsSinceEpoch(ts);
+        return DateFormat('HH:mm:ss - dd/MM').format(dt);
+      }
+      final str = ts.toString();
+      final dt = DateTime.tryParse(str);
+      if (dt != null) {
+        return DateFormat('HH:mm:ss - dd/MM').format(dt);
+      }
+      return str;
+    } catch (_) {
+      return ts.toString();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     double totalPeso = 0.0;
     for (var r in _registros) {
-      totalPeso += r.weight;
+      final p = (r['weight'] ?? r['peso'] ?? 0.0) as num;
+      totalPeso += p.toDouble();
     }
     final media = _registros.isNotEmpty ? (totalPeso / _registros.length) : 0.0;
 
@@ -164,19 +191,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           separatorBuilder: (_, __) => const SizedBox(height: 8),
                           itemBuilder: (context, index) {
                             final item = _registros[index];
-                            final id = item.id;
-                            final peso = item.weight;
-                            final galpao = item.galpao;
-                            final gaiola = item.gaiola;
-                            final timestampStr = item.timestamp;
-
-                            String horaFormatada = '-';
-                            try {
-                              final dt = DateTime.parse(timestampStr);
-                              horaFormatada = DateFormat('HH:mm:ss - dd/MM').format(dt);
-                            } catch (_) {
-                              horaFormatada = timestampStr;
-                            }
+                            final id = item['id'] as int;
+                            final rawPeso = item['weight'] ?? item['peso'] ?? 0.0;
+                            final peso = (rawPeso as num).toDouble();
+                            final galpao = item['galpao']?.toString() ?? '-';
+                            final gaiola = item['gaiola']?.toString() ?? '-';
+                            final horaFormatada = _formatarDataHora(item['timestamp']);
 
                             final aveNumero = _registros.length - index;
 
