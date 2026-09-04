@@ -1,7 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/ble_service.dart';
+import '../services/database_service.dart';
 import '../controllers/weighing_controller.dart';
+import 'history_screen.dart';
 
 class WeighingScreen extends StatefulWidget {
   const WeighingScreen({super.key});
@@ -12,6 +15,99 @@ class WeighingScreen extends StatefulWidget {
 
 class _WeighingScreenState extends State<WeighingScreen> {
   bool _autoRecord = true;
+  Timer? _stabilizationTimer;
+  double _lastStableWeight = 0.0;
+  bool _hasRecordedThisWeight = false;
+
+  void _processarAutoRecord(double currentWeight, String galpao, String gaiola) {
+    if (!_autoRecord) return;
+
+    // Considera estável se o peso for relevante (> 100g)
+    if (currentWeight > 0.100) {
+      if ((currentWeight - _lastStableWeight).abs() < 0.02) {
+        // Peso mantido estável
+        if (_stabilizationTimer == null && !_hasRecordedThisWeight) {
+          _stabilizationTimer = Timer(const Duration(milliseconds: 1200), () {
+            _salvarPesagem(currentWeight, galpao, gaiola, isAuto: true);
+            _hasRecordedThisWeight = true;
+          });
+        }
+      } else {
+        // Peso alterou / oscilou: reinicia temporizador
+        _lastStableWeight = currentWeight;
+        _stabilizationTimer?.cancel();
+        _stabilizationTimer = null;
+        _hasRecordedThisWeight = false;
+      }
+    } else {
+      // Gancho vazio ou zerado: pronto para a próxima ave
+      _stabilizationTimer?.cancel();
+      _stabilizationTimer = null;
+      _hasRecordedThisWeight = false;
+      _lastStableWeight = 0.0;
+    }
+  }
+
+  Future<void> _salvarPesagem(double weight, String galpao, String gaiola, {bool isAuto = false}) async {
+    if (weight <= 0.05) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Aviso: Gancho vazio ou peso próximo de zero."),
+          duration: Duration(milliseconds: 800),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // 1. Tenta gravar via controller se o método existir
+      final controller = context.read<WeighingController>();
+      try {
+        (controller as dynamic).recordWeight(weight);
+      } catch (_) {
+        controller.recordCurrentWeight();
+      }
+
+      // 2. Garante persistência direta na tabela 'weighings' do SQLite
+      await DatabaseService.instance.insertWeighing({
+        'galpao': galpao,
+        'gaiola': gaiola,
+        'weight': weight,
+        'is_auto': isAuto ? 1 : 0,
+        'timestamp': DateTime.now().toIso8601String(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isAuto
+                  ? "Auto-Gravado: ${weight.toStringAsFixed(2)} kg no $gaiola!"
+                  : "Pesagem gravada: ${weight.toStringAsFixed(2)} kg!",
+            ),
+            duration: const Duration(milliseconds: 700),
+            backgroundColor: const Color(0xFF10B981),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Erro ao salvar pesagem: $e"),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _stabilizationTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +124,11 @@ class _WeighingScreenState extends State<WeighingScreen> {
     final gaiolaText = controller.selectedGaiola.isNotEmpty
         ? controller.selectedGaiola
         : "Lote 01";
+
+    // Executa verificação para gravação automática
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _processarAutoRecord(weight, galpaoText, gaiolaText);
+    });
 
     return Scaffold(
       backgroundColor: const Color(0xFF070D18),
@@ -68,6 +169,19 @@ class _WeighingScreenState extends State<WeighingScreen> {
           ],
         ),
         actions: [
+          // ATALHO PARA HISTÓRICO / EXCLUSÃO DE PESAGENS
+          IconButton(
+            icon: const Icon(Icons.list_alt_rounded, color: Color(0xFF38BDF8)),
+            tooltip: "Ver Histórico do Lote",
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const HistoryScreen(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.sync_rounded, color: Color(0xFFEA580C)),
             tooltip: "Zerar / Tara",
@@ -153,7 +267,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                           ),
                         ),
                       ),
-                      // PESO GIGANTE EM LARANJA (Color(0xFFEA580C))
+                      // PESO GIGANTE
                       Center(
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -163,7 +277,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                               style: const TextStyle(
                                 fontSize: 96,
                                 fontWeight: FontWeight.w900,
-                                color: Color(0xFFEA580C), // Laranja igual ao botão
+                                color: Color(0xFFEA580C),
                                 letterSpacing: -2,
                                 height: 1.0,
                               ),
@@ -219,7 +333,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
               ),
               const SizedBox(height: 6),
 
-              // BOTÃO REGISTRAR PESAGEM (LARANJA 0xFFEA580C)
+              // BOTÃO REGISTRAR PESAGEM MANUAL
               SizedBox(
                 width: double.infinity,
                 height: 48,
@@ -230,16 +344,7 @@ class _WeighingScreenState extends State<WeighingScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     elevation: 3,
                   ),
-                  onPressed: () {
-                    controller.recordCurrentWeight();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Pesagem Registrada!"),
-                        duration: Duration(milliseconds: 600),
-                        backgroundColor: Color(0xFF10B981),
-                      ),
-                    );
-                  },
+                  onPressed: () => _salvarPesagem(weight, galpaoText, gaiolaText, isAuto: false),
                   icon: const Icon(Icons.edit_note_rounded, size: 22),
                   label: const Text(
                     "REGISTRAR PESAGEM MANUAL",
