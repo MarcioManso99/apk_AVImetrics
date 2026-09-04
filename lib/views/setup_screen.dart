@@ -17,6 +17,128 @@ class _SetupScreenState extends State<SetupScreen> {
   int _selectedGalpao = 1;
   int _selectedGaiola = 1;
 
+  void _abrirModalBluetooth(BuildContext context) {
+    final ble = context.read<BleService>();
+    ble.loadPairedDevices();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F172A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (ctx) => Consumer<BleService>(
+        builder: (context, bleService, child) {
+          final devices = bleService.scanResults;
+
+          return SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.bluetooth_searching_rounded, color: Color(0xFFEA580C), size: 24),
+                          SizedBox(width: 10),
+                          Text(
+                            "BALANÇAS PAREADAS",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.refresh_rounded, color: Colors.white70),
+                        onPressed: () => bleService.loadPairedDevices(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Text(
+                    "Selecione o ESP32 pareado no seu celular:",
+                    style: TextStyle(color: Colors.white54, fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  if (devices.isEmpty)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 24),
+                      child: Center(
+                        child: Text(
+                          "Nenhuma balança encontrada.\nPareie 'AVImetrics_Scale' nas configurações do Android.",
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.white38, fontSize: 13),
+                        ),
+                      ),
+                    )
+                  else
+                    Flexible(
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: devices.length,
+                        separatorBuilder: (_, __) => const Divider(color: Colors.white12),
+                        itemBuilder: (context, index) {
+                          final device = devices[index];
+                          final isThisConnected = bleService.connectedDevice?.address == device.address && bleService.isConnected;
+
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: (isThisConnected ? const Color(0xFF10B981) : const Color(0xFFEA580C)).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                Icons.bluetooth_connected_rounded,
+                                color: isThisConnected ? const Color(0xFF10B981) : const Color(0xFFEA580C),
+                              ),
+                            ),
+                            title: Text(
+                              device.name ?? "Dispositivo Desconhecido",
+                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              device.address,
+                              style: const TextStyle(color: Colors.white54, fontSize: 11),
+                            ),
+                            trailing: isThisConnected
+                                ? const Text(
+                                    "CONECTADO",
+                                    style: TextStyle(color: Color(0xFF10B981), fontWeight: FontWeight.bold, fontSize: 12),
+                                  )
+                                : ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFFEA580C),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    onPressed: () async {
+                                      Navigator.pop(ctx);
+                                      await bleService.connectToDevice(device);
+                                    },
+                                    child: const Text("CONECTAR", style: TextStyle(color: Colors.white, fontSize: 12)),
+                                  ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   void _abrirModalSincronizacao(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -112,7 +234,6 @@ class _SetupScreenState extends State<SetupScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0),
           child: Row(
             children: [
-              // Coluna da Esquerda: Seleção Galpão e Gaiola
               Expanded(
                 flex: 6,
                 child: Column(
@@ -130,26 +251,47 @@ class _SetupScreenState extends State<SetupScreen> {
                             color: Color(0xFFEA580C),
                           ),
                         ),
-                        Row(
-                          children: [
-                            Container(
-                              width: 10,
-                              height: 10,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: ble.isConnected ? const Color(0xFF10B981) : Colors.red,
+                        InkWell(
+                          onTap: () => _abrirModalBluetooth(context),
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0F172A),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: ble.isConnected ? const Color(0xFF10B981) : Colors.redAccent.withOpacity(0.5),
+                                width: 1.2,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              ble.isConnected ? "ESP32 CONECTADO" : "ESP32 DESCONECTADO",
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                color: ble.isConnected ? const Color(0xFF10B981) : Colors.redAccent,
-                              ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 10,
+                                  height: 10,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: ble.isConnected ? const Color(0xFF10B981) : Colors.red,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  ble.isConnected ? "ESP32 CONECTADO" : "ESP32 DESCONECTADO",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: ble.isConnected ? const Color(0xFF10B981) : Colors.redAccent,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Icon(
+                                  Icons.bluetooth,
+                                  size: 16,
+                                  color: ble.isConnected ? const Color(0xFF10B981) : Colors.redAccent,
+                                ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
                       ],
                     ),
@@ -241,7 +383,6 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
               ),
               const SizedBox(width: 20),
-              // Coluna da Direita: Card de Resumo + Botão de Tara + Sincronização + Iniciar
               Expanded(
                 flex: 4,
                 child: Container(
@@ -286,7 +427,6 @@ class _SetupScreenState extends State<SetupScreen> {
                       ),
                       Column(
                         children: [
-                          // BOTÃO TARA
                           SizedBox(
                             width: double.infinity,
                             height: 42,
@@ -320,8 +460,6 @@ class _SetupScreenState extends State<SetupScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-
-                          // BOTÃO SINCRONIZAR / EXPORTAR
                           SizedBox(
                             width: double.infinity,
                             height: 42,
@@ -346,8 +484,6 @@ class _SetupScreenState extends State<SetupScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-
-                          // BOTÃO INICIAR PESAGEM
                           SizedBox(
                             width: double.infinity,
                             height: 48,
