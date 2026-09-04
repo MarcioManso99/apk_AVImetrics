@@ -5,6 +5,7 @@ import '../services/database_service.dart';
 import '../services/sync_service.dart';
 import '../controllers/weighing_controller.dart';
 import 'weighing_screen.dart';
+import 'history_screen.dart';
 
 class SetupScreen extends StatefulWidget {
   const SetupScreen({super.key});
@@ -169,6 +170,26 @@ class _SetupScreenState extends State<SetupScreen> {
                 ],
               ),
               const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF38BDF8).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.list_alt_rounded, color: Color(0xFF38BDF8)),
+                ),
+                title: const Text("Consultar Histórico Geral", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: const Text("Exibir pesagens salvas e apagar registros individuais", style: TextStyle(color: Colors.white54, fontSize: 11)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const HistoryScreen()),
+                  );
+                },
+              ),
+              const Divider(color: Colors.white12),
               ListTile(
                 leading: Container(
                   padding: const EdgeInsets.all(8),
@@ -427,9 +448,10 @@ class _SetupScreenState extends State<SetupScreen> {
                       ),
                       Column(
                         children: [
+                          // BOTÃO TARA
                           SizedBox(
                             width: double.infinity,
-                            height: 42,
+                            height: 38,
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: const Color(0xFF030712),
@@ -449,20 +471,57 @@ class _SetupScreenState extends State<SetupScreen> {
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.sync_rounded, color: Color(0xFFEA580C), size: 18),
+                                  Icon(Icons.sync_rounded, color: Color(0xFFEA580C), size: 16),
                                   SizedBox(width: 6),
                                   Text(
                                     "ZERAR / TARA DO GANCHO",
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Colors.white),
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Colors.white),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
+
+                          // BOTÃO HISTÓRICO
                           SizedBox(
                             width: double.infinity,
-                            height: 42,
+                            height: 38,
+                            child: OutlinedButton(
+                              style: OutlinedButton.styleFrom(
+                                backgroundColor: const Color(0xFF030712),
+                                side: const BorderSide(color: Color(0xFF38BDF8), width: 1.2),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              ),
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => HistoryScreen(
+                                      galpaoFiltro: "Galpão ${_selectedGalpao.toString().padLeft(2, '0')}",
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.list_alt_rounded, color: Color(0xFF38BDF8), size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "HISTÓRICO / APAGAR PESAGEM",
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF38BDF8)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+
+                          // BOTÃO SINCRONIZAR
+                          SizedBox(
+                            width: double.infinity,
+                            height: 38,
                             child: OutlinedButton(
                               style: OutlinedButton.styleFrom(
                                 backgroundColor: const Color(0xFF030712),
@@ -473,20 +532,22 @@ class _SetupScreenState extends State<SetupScreen> {
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.cloud_sync_rounded, color: Color(0xFF10B981), size: 18),
+                                  Icon(Icons.cloud_sync_rounded, color: Color(0xFF10B981), size: 16),
                                   SizedBox(width: 6),
                                   Text(
                                     "SINCRONIZAR / EXPORTAR",
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, color: Color(0xFF10B981)),
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 11, color: Color(0xFF10B981)),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 6),
+
+                          // BOTÃO INICIAR PESAGEM
                           SizedBox(
                             width: double.infinity,
-                            height: 48,
+                            height: 44,
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFFEA580C),
@@ -505,11 +566,11 @@ class _SetupScreenState extends State<SetupScreen> {
                               child: const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Icon(Icons.play_arrow_rounded, size: 24),
+                                  Icon(Icons.play_arrow_rounded, size: 22),
                                   SizedBox(width: 4),
                                   Text(
                                     "INICIAR PESAGEM",
-                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 0.8),
+                                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 13, letterSpacing: 0.8),
                                   ),
                                 ],
                               ),
