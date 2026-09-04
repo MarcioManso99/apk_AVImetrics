@@ -222,15 +222,30 @@ class _SetupScreenState extends State<SetupScreen> {
                 onTap: () async {
                   Navigator.pop(ctx);
                   final sync = SyncService(dbService: DatabaseService.instance);
-                  final ok = await sync.sendDirectToCentral(
-                    endpointUrl: "https://api.jjagro.com.br/v1/pesagens",
-                    apiKey: "SUA_API_KEY_AQUI",
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Enviando dados para a Central..."),
+                      duration: Duration(seconds: 1),
+                      backgroundColor: Color(0xFF0F172A),
+                    ),
                   );
+
+                  final ok = await sync.sendDirectToCentral(
+                    endpointUrl: "https://ais-dev-kvlyq6zsd6wwhkv6nqacj4-373503873765.us-west1.run.app/api/v1/pesagens",
+                    apiKey: "avimetrics_secret_key_2026",
+                  );
+
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(ok ? "Lote sincronizado com sucesso!" : "Sem resposta da Central. Tente exportar em CSV."),
+                        content: Text(
+                          ok
+                              ? "✓ Pesagens gravadas e consolidadas na Central AVImetrics!"
+                              : "Sem resposta da Central. Verifique a internet ou exporte em CSV.",
+                        ),
                         backgroundColor: ok ? const Color(0xFF10B981) : Colors.redAccent,
+                        duration: const Duration(seconds: 3),
                       ),
                     );
                   }
@@ -448,7 +463,6 @@ class _SetupScreenState extends State<SetupScreen> {
                       ),
                       Column(
                         children: [
-                          // BOTÃO TARA
                           SizedBox(
                             width: double.infinity,
                             height: 38,
@@ -482,8 +496,6 @@ class _SetupScreenState extends State<SetupScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-
-                          // BOTÃO HISTÓRICO
                           SizedBox(
                             width: double.infinity,
                             height: 38,
@@ -497,9 +509,7 @@ class _SetupScreenState extends State<SetupScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => HistoryScreen(
-                                      galpaoFiltro: "Galpão ${_selectedGalpao.toString().padLeft(2, '0')}",
-                                    ),
+                                    builder: (_) => const HistoryScreen(),
                                   ),
                                 );
                               },
@@ -517,8 +527,6 @@ class _SetupScreenState extends State<SetupScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-
-                          // BOTÃO SINCRONIZAR
                           SizedBox(
                             width: double.infinity,
                             height: 38,
@@ -543,8 +551,6 @@ class _SetupScreenState extends State<SetupScreen> {
                             ),
                           ),
                           const SizedBox(height: 6),
-
-                          // BOTÃO INICIAR PESAGEM
                           SizedBox(
                             width: double.infinity,
                             height: 44,
