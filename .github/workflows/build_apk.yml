@@ -84,9 +84,14 @@ jobs:
         run: |
           APP_GRADLE="android/app/build.gradle"
           if [ -f "$APP_GRADLE" ]; then
-            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 34/g' $APP_GRADLE || true
+            sed -i 's/compileSdk = flutter.compileSdkVersion/compileSdk = 35/g' $APP_GRADLE || true
+            sed -i 's/compileSdkVersion flutter.compileSdkVersion/compileSdkVersion 35/g' $APP_GRADLE || true
             sed -i 's/minSdk = flutter.minSdkVersion/minSdk = 21/g' $APP_GRADLE || true
             sed -i 's/targetSdk = flutter.targetSdkVersion/targetSdk = 34/g' $APP_GRADLE || true
+            
+            # Desativa o bloqueio do checkReleaseAarMetadata
+            echo "configurations.all { resolutionStrategy { force 'androidx.core:core-ktx:1.13.1' } }" >> $APP_GRADLE
+            echo "configurations.all { resolutionStrategy { force 'androidx.core:core:1.13.1' } }" >> $APP_GRADLE
           fi
 
           MANIFEST="android/app/src/main/AndroidManifest.xml"
@@ -96,7 +101,7 @@ jobs:
           sed -i 's/android:label="[^"]*"/android:label="AVImetrics"/g' $MANIFEST
 
       - name: Compilar APK (Release)
-        run: flutter build apk --release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Disponibilizar APK para download
         uses: actions/upload-artifact@v4
