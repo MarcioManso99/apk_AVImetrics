@@ -97,7 +97,7 @@ class _SetupScreenState extends State<SetupScreen> {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    "Selecione o ESP32 pareado no seu celular:",
+                    "Selecione o dispositivo pareado no seu celular:",
                     style: TextStyle(color: Colors.white54, fontSize: 12),
                   ),
                   const SizedBox(height: 12),
@@ -227,7 +227,7 @@ class _SetupScreenState extends State<SetupScreen> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  ble.isConnected ? "ESP32 CONECTADO" : "ESP32 DESCONECTADO",
+                                  ble.isConnected ? "BALANÇA CONECTADA" : "BALANÇA DESCONECTADA",
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
