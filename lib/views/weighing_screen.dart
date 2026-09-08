@@ -22,10 +22,8 @@ class _WeighingScreenState extends State<WeighingScreen> {
   void _processarAutoRecord(double currentWeight, String galpao, String gaiola) {
     if (!_autoRecord) return;
 
-    // Considera estável se o peso for relevante (> 100g)
     if (currentWeight > 0.100) {
       if ((currentWeight - _lastStableWeight).abs() < 0.02) {
-        // Peso mantido estável
         if (_stabilizationTimer == null && !_hasRecordedThisWeight) {
           _stabilizationTimer = Timer(const Duration(milliseconds: 1200), () {
             _salvarPesagem(currentWeight, galpao, gaiola, isAuto: true);
@@ -33,14 +31,12 @@ class _WeighingScreenState extends State<WeighingScreen> {
           });
         }
       } else {
-        // Peso alterou / oscilou: reinicia temporizador
         _lastStableWeight = currentWeight;
         _stabilizationTimer?.cancel();
         _stabilizationTimer = null;
         _hasRecordedThisWeight = false;
       }
     } else {
-      // Gancho vazio ou zerado: pronto para a próxima ave
       _stabilizationTimer?.cancel();
       _stabilizationTimer = null;
       _hasRecordedThisWeight = false;
@@ -61,7 +57,6 @@ class _WeighingScreenState extends State<WeighingScreen> {
     }
 
     try {
-      // 1. Tenta gravar via controller se o método existir
       final controller = context.read<WeighingController>();
       try {
         (controller as dynamic).recordWeight(weight);
@@ -69,7 +64,6 @@ class _WeighingScreenState extends State<WeighingScreen> {
         controller.recordCurrentWeight();
       }
 
-      // 2. Garante persistência direta na tabela 'weighings' do SQLite
       await DatabaseService.instance.insertWeighing({
         'galpao': galpao,
         'gaiola': gaiola,
@@ -125,7 +119,6 @@ class _WeighingScreenState extends State<WeighingScreen> {
         ? controller.selectedGaiola
         : "Lote 01";
 
-    // Executa verificação para gravação automática
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _processarAutoRecord(weight, galpaoText, gaiolaText);
     });
@@ -169,7 +162,6 @@ class _WeighingScreenState extends State<WeighingScreen> {
           ],
         ),
         actions: [
-          // ATALHO PARA HISTÓRICO / EXCLUSÃO DE PESAGENS
           IconButton(
             icon: const Icon(Icons.list_alt_rounded, color: Color(0xFF38BDF8)),
             tooltip: "Ver Histórico do Lote",
@@ -201,10 +193,10 @@ class _WeighingScreenState extends State<WeighingScreen> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
           child: Column(
             children: [
-              // MOSTRADOR DO PESO
+              // MOSTRADOR DO PESO EXPANDIDO
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -267,32 +259,41 @@ class _WeighingScreenState extends State<WeighingScreen> {
                           ),
                         ),
                       ),
-                      // PESO GIGANTE
+                      // NÚMERO E LEGENDA GIGANTES COM AUTO-FIT
                       Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              weight.toStringAsFixed(2),
-                              style: const TextStyle(
-                                fontSize: 96,
-                                fontWeight: FontWeight.w900,
-                                color: Color(0xFFEA580C),
-                                letterSpacing: -2,
-                                height: 1.0,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    weight.toStringAsFixed(2),
+                                    style: const TextStyle(
+                                      fontSize: 145,
+                                      fontWeight: FontWeight.w900,
+                                      color: Color(0xFFEA580C),
+                                      letterSpacing: -2,
+                                      height: 0.95,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              "QUILOGRAMAS (KG)",
-                              style: TextStyle(
-                                color: Colors.white38,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
+                              const SizedBox(height: 6),
+                              const Text(
+                                "QUILOGRAMAS (KG)",
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 2.5,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ],
